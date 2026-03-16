@@ -1,5 +1,6 @@
-// Smooth scrolling for in-page links (for wider browser support)
+// Smooth scrolling and contact form submission with backend integration
 document.addEventListener("DOMContentLoaded", function () {
+  // Smooth scrolling for in-page links
   const navLinks = document.querySelectorAll('a[href^="#"]');
 
   navLinks.forEach((link) => {
@@ -54,7 +55,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
-  // Contact form validation
+  // Contact form validation + backend submit
   const form = document.getElementById("contact-form");
 
   if (form) {
@@ -63,6 +64,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
       const nameInput = document.getElementById("name");
       const emailInput = document.getElementById("email");
+      const phoneInput = document.getElementById("phone");
       const serviceInput = document.getElementById("service");
       const messageInput = document.getElementById("message");
       const statusEl = document.getElementById("form-status");
@@ -74,7 +76,6 @@ document.addEventListener("DOMContentLoaded", function () {
         message: ""
       };
 
-      // Basic helpers
       const setError = (fieldId, message) => {
         const inputEl = document.getElementById(fieldId);
         const errorEl = document.getElementById(`${fieldId}-error`);
@@ -91,7 +92,6 @@ document.addEventListener("DOMContentLoaded", function () {
       };
 
       const emailIsValid = (email) => {
-        // Simple email validation pattern
         const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return pattern.test(email.toLowerCase());
       };
@@ -102,12 +102,11 @@ document.addEventListener("DOMContentLoaded", function () {
         statusEl.classList.remove("success", "error");
       }
 
-      // Name validation
+      // Front-end validation (mirrors backend)
       if (!nameInput.value.trim()) {
         errors.name = "Please enter your full name.";
       }
 
-      // Email validation
       const emailValue = emailInput.value.trim();
       if (!emailValue) {
         errors.email = "Please enter your email address.";
@@ -115,12 +114,10 @@ document.addEventListener("DOMContentLoaded", function () {
         errors.email = "Please enter a valid email address.";
       }
 
-      // Service validation
       if (!serviceInput.value) {
         errors.service = "Please select the type of service you need.";
       }
 
-      // Message validation
       const msg = messageInput.value.trim();
       if (!msg) {
         errors.message = "Please provide a short description of your issue or project.";
@@ -128,7 +125,6 @@ document.addEventListener("DOMContentLoaded", function () {
         errors.message = "Please include a bit more detail so we can respond effectively.";
       }
 
-      // Apply errors
       setError("name", errors.name);
       setError("email", errors.email);
       setError("service", errors.service);
@@ -144,20 +140,70 @@ document.addEventListener("DOMContentLoaded", function () {
         return;
       }
 
-      // If everything is valid, simulate successful submission
-      if (statusEl) {
-        statusEl.textContent =
-          "Thank you. Your request has been received. We’ll review it and get back to you as soon as possible.";
-        statusEl.classList.add("success");
+      // Build payload for backend
+      const payload = {
+        name: nameInput.value.trim(),
+        email: emailInput.value.trim(),
+        phone: phoneInput.value.trim(),
+        service: serviceInput.value,
+        message: messageInput.value.trim()
+      };
+
+      // Disable button during submit
+      const submitButton = form.querySelector('button[type="submit"]');
+      if (submitButton) {
+        submitButton.disabled = true;
       }
 
-      // Optionally reset form fields after a brief delay
-      setTimeout(() => {
-        form.reset();
-        ["name", "email", "service", "message"].forEach((fieldId) => {
-          setError(fieldId, "");
+      if (statusEl) {
+        statusEl.textContent = "Sending your request...";
+        statusEl.classList.remove("error", "success");
+      }
+
+      fetch("/api/contact", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      })
+        .then(async (res) => {
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            const errorMessage =
+              data && data.error
+                ? data.error
+                : "Something went wrong sending your request.";
+            throw new Error(errorMessage);
+          }
+
+          if (statusEl) {
+            statusEl.textContent =
+              "Thank you. Your request has been sent. We’ll review it and get back to you as soon as possible.";
+            statusEl.classList.remove("error");
+            statusEl.classList.add("success");
+          }
+
+          form.reset();
+          ["name", "email", "service", "message"].forEach((fieldId) => {
+            setError(fieldId, "");
+          });
+        })
+        .catch((error) => {
+          console.error("Contact form error:", error);
+          if (statusEl) {
+            statusEl.textContent =
+              error.message ||
+              "Something went wrong sending your request. Please email us directly at info@marchewkatech.com.";
+            statusEl.classList.remove("success");
+            statusEl.classList.add("error");
+          }
+        })
+        .finally(() => {
+          if (submitButton) {
+            submitButton.disabled = false;
+          }
         });
-      }, 1500);
     });
   }
 });
