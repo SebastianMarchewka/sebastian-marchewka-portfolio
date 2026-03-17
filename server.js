@@ -15,6 +15,22 @@ const SMTP_PASS = process.env.SMTP_PASS;
 const MAIL_TO = process.env.MAIL_TO;
 const MAIL_FROM = process.env.MAIL_FROM || process.env.MAIL_TO;
 
+const requiredEnv = [
+  ["SMTP_HOST", SMTP_HOST],
+  ["SMTP_PORT", process.env.SMTP_PORT],
+  ["SMTP_USER", SMTP_USER],
+  ["SMTP_PASS", SMTP_PASS],
+  ["MAIL_TO", MAIL_TO],
+  ["MAIL_FROM", MAIL_FROM]
+];
+
+const missingEnv = requiredEnv.filter(([, value]) => !value || !String(value).trim()).map(([key]) => key);
+if (missingEnv.length) {
+  console.warn(
+    `Missing required environment variables: ${missingEnv.join(", ")}. Email sending will fail until these are set in .env.`
+  );
+}
+
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -30,6 +46,15 @@ const transporter = nodemailer.createTransport({
   auth: {
     user: SMTP_USER,
     pass: SMTP_PASS
+  }
+});
+
+// Verify SMTP connection on startup (helps diagnose config/sender issues)
+transporter.verify((err) => {
+  if (err) {
+    console.error("SMTP verification failed:", err);
+  } else {
+    console.log("SMTP connection verified. Ready to send emails.");
   }
 });
 
