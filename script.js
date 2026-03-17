@@ -1,5 +1,39 @@
 // Smooth scrolling and contact form submission with backend integration
 document.addEventListener("DOMContentLoaded", function () {
+  // Mobile navigation toggle (hamburger)
+  const siteHeader = document.querySelector(".site-header");
+  const navToggle = document.querySelector(".nav-toggle");
+  const navList = document.querySelector(".nav-list");
+
+  const setNavOpen = (isOpen) => {
+    if (!siteHeader || !navToggle) return;
+    siteHeader.classList.toggle("nav-open", isOpen);
+    navToggle.setAttribute("aria-expanded", String(isOpen));
+    navToggle.setAttribute("aria-label", isOpen ? "Close menu" : "Open menu");
+  };
+
+  if (navToggle && siteHeader) {
+    navToggle.addEventListener("click", () => {
+      const isOpen = siteHeader.classList.contains("nav-open");
+      setNavOpen(!isOpen);
+    });
+
+    // Close menu after clicking any nav link
+    if (navList) {
+      navList.addEventListener("click", (e) => {
+        const target = e.target;
+        if (target && target.tagName === "A") {
+          setNavOpen(false);
+        }
+      });
+    }
+
+    // Close menu on Escape key
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") setNavOpen(false);
+    });
+  }
+
   // Smooth scrolling for in-page links
   const navLinks = document.querySelectorAll('a[href^="#"]');
 
@@ -205,5 +239,67 @@ document.addEventListener("DOMContentLoaded", function () {
           }
         });
     });
+  }
+
+  // Hardware inventory (renders only if hardware page container exists)
+  const hardwareListEl = document.getElementById("hardware-list");
+  const availableOnlyEl = document.getElementById("available-only");
+
+  if (hardwareListEl) {
+    const hardwareItems = [
+      {
+        name: "Refurbished Dell OptiPlex Desktop (i5 / 16GB / 512GB SSD)",
+        price: 399,
+        description: "Great everyday system for office work, email, and browsing. Includes fresh Windows setup and updates.",
+        status: "Available"
+      },
+      {
+        name: "Custom Gaming/Creator PC Build (Quote-based)",
+        price: null,
+        description: "Built to your workload and budget. Parts selection, assembly, setup, and testing included.",
+        status: "Available"
+      },
+      {
+        name: "Business Laptop Bundle (Setup Included)",
+        price: 899,
+        description: "Laptop + initial setup, updates, and basic security configuration. Ideal for small business use.",
+        status: "Sold"
+      }
+    ];
+
+    const renderHardware = () => {
+      const availableOnly = availableOnlyEl ? availableOnlyEl.checked : false;
+      const filtered = availableOnly
+        ? hardwareItems.filter((item) => item.status === "Available")
+        : hardwareItems;
+
+      hardwareListEl.innerHTML = filtered
+        .map((item) => {
+          const priceText = item.price === null ? "Contact for pricing" : `$${item.price.toLocaleString()}`;
+          const statusClass = item.status === "Available" ? "status-available" : "status-sold";
+          return `
+            <article class="hardware-card">
+              <div class="hardware-card-top">
+                <h3>${item.name}</h3>
+                <span class="hardware-status ${statusClass}">${item.status}</span>
+              </div>
+              <p class="hardware-price"><strong>${priceText}</strong></p>
+              <p class="hardware-desc">${item.description}</p>
+              <a class="btn btn-small btn-call" href="tel:+16475104302">Call to Purchase</a>
+            </article>
+          `;
+        })
+        .join("");
+
+      if (!filtered.length) {
+        hardwareListEl.innerHTML = `<p class="hardware-empty">No items found. Please uncheck “Available only” or call for current inventory.</p>`;
+      }
+    };
+
+    if (availableOnlyEl) {
+      availableOnlyEl.addEventListener("change", renderHardware);
+    }
+
+    renderHardware();
   }
 });
