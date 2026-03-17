@@ -194,7 +194,7 @@ document.addEventListener("DOMContentLoaded", function () {
         statusEl.classList.remove("error", "success");
       }
 
-      fetch("/api/contact", {
+      fetch("https://marchewka-tech.onrender.com", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
