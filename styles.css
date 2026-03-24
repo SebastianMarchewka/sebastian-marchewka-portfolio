@@ -1144,3 +1144,15 @@ textarea.error {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
+
+.process {
+  padding-left: 35%;
+}
+
+.websitePackageHeader{
+  padding-left: 43%;
+}
+
+#packages {
+  scroll-margin-top: 90px; /* adjust based on your header height */
+}
