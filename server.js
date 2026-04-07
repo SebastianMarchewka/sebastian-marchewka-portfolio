@@ -2,7 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const nodemailer = require("nodemailer");
 const path = require("path");
-
+const cors = require('cors');
 const app = express();
 
 // Basic configuration
@@ -30,7 +30,32 @@ if (missingEnv.length) {
     `Missing required environment variables: ${missingEnv.join(", ")}. Email sending will fail until these are set in .env.`
   );
 }
+const allowedOrigins = [
+  'https://marchewkatech.com',
+  'http://localhost:3000'
+];
 
+app.use(cors({
+  origin: function (origin, callback)
+  {
+    // allow requests with no origin (like Postman)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin))
+    {
+      callback(null, true);
+    }
+    else
+    {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type']
+}));
+
+// THIS LINE FIXES PREFLIGHT (VERY IMPORTANT)
+app.options('*', cors());
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
